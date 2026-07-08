@@ -35,24 +35,138 @@ async function sendMessage() {
     input.value = '';
     autoResize(input);
 
-    // Show typing indicator
+    // Show typing indicator while waiting for first token
     const typingId = showTypingIndicator();
     setLoading(true);
 
     try {
-        const data = await api('/chat', {
-            method: 'POST',
-            body: { message }
-        });
-
-        removeTypingIndicator(typingId);
-        addMessageToUI('assistant', data.response, data.sources);
+        await streamChat(message, typingId);
     } catch (error) {
         removeTypingIndicator(typingId);
         addMessageToUI('assistant', `❌ Error: ${error.message}`);
     } finally {
         setLoading(false);
     }
+}
+
+/**
+ * Stream a chat response using Server-Sent Events.
+ * Tokens are displayed incrementally as they arrive from the LLM,
+ * which dramatically improves perceived response time.
+ */
+async function streamChat(message, typingId) {
+    const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Error desconocido' }));
+        throw new Error(error.detail || 'Error en la petición');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let assistantDiv = null;
+    let contentDiv = null;
+    let fullText = '';
+    let sources = [];
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            // Decode the chunk and process each SSE event
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+
+                let event;
+                try {
+                    event = JSON.parse(line.slice(6));
+                } catch {
+                    continue; // skip malformed lines
+                }
+
+                switch (event.type) {
+                    case 'sources':
+                        sources = event.data || [];
+                        break;
+
+                    case 'token':
+                        // Remove typing indicator on first token
+                        if (!assistantDiv) {
+                            removeTypingIndicator(typingId);
+                            ({ assistantDiv, contentDiv } = createAssistantMessage());
+                        }
+                        fullText += event.data;
+                        // Render formatted content
+                        contentDiv.innerHTML = `<p>${formatMessage(fullText)}</p>`;
+                        // Scroll to bottom
+                        const messagesDiv = document.getElementById('messages');
+                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                        break;
+
+                    case 'done':
+                        // Ensure the message is finalized
+                        if (!assistantDiv) {
+                            removeTypingIndicator(typingId);
+                            ({ assistantDiv, contentDiv } = createAssistantMessage());
+                            contentDiv.innerHTML = `<p>${formatMessage(fullText)}</p>`;
+                        }
+                        // Add sources if available
+                        if (sources.length > 0) {
+                            const sourcesDiv = document.createElement('div');
+                            sourcesDiv.className = 'message-sources';
+                            sourcesDiv.textContent = `📎 Fuentes: ${sources.join(', ')}`;
+                            contentDiv.appendChild(sourcesDiv);
+                        }
+                        break;
+
+                    case 'error':
+                        if (!assistantDiv) {
+                            removeTypingIndicator(typingId);
+                        }
+                        addMessageToUI('assistant', `❌ Error: ${event.data}`);
+                        break;
+                }
+            }
+        }
+    } catch (error) {
+        if (!assistantDiv) {
+            removeTypingIndicator(typingId);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Create an empty assistant message bubble in the DOM.
+ * Returns references to the outer div and the content div so
+ * the caller can update the content incrementally.
+ */
+function createAssistantMessage() {
+    const messagesDiv = document.getElementById('messages');
+    const assistantDiv = document.createElement('div');
+    assistantDiv.className = 'message assistant';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.textContent = '🤖';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+
+    assistantDiv.appendChild(avatar);
+    assistantDiv.appendChild(contentDiv);
+    messagesDiv.appendChild(assistantDiv);
+
+    return { assistantDiv, contentDiv };
 }
 
 function addMessageToUI(role, content, sources = []) {
@@ -144,98 +258,6 @@ function setLoading(state) {
     btn.disabled = state;
 }
 
-// ─── Config Modal Functions ───────────────────────────────────────
-function openConfigModal() {
-    const modal = document.getElementById('configModal');
-    modal.style.display = 'flex';
-
-    // Load current config
-    loadConfig();
-}
-
-function closeConfigModal() {
-    const modal = document.getElementById('configModal');
-    modal.style.display = 'none';
-    const status = document.getElementById('configStatus');
-    status.style.display = 'none';
-}
-
-async function loadConfig() {
-    try {
-        const data = await api('/config');
-        document.getElementById('maasUrl').value = data.url || '';
-        document.getElementById('maasModel').value = data.model || '';
-        // Show masked API key if configured
-        if (data.api_key && data.api_key !== '' && data.api_key !== '...') {
-            document.getElementById('maasApiKey').value = data.api_key;
-        } else {
-            document.getElementById('maasApiKey').value = '';
-        }
-    } catch (error) {
-        console.error('Error loading config:', error);
-    }
-}
-
-async function saveConfig() {
-    const url = document.getElementById('maasUrl').value.trim();
-    const apiKey = document.getElementById('maasApiKey').value.trim();
-    const model = document.getElementById('maasModel').value.trim();
-
-    if (!url || !apiKey || !model) {
-        showConfigStatus('error', 'Todos los campos son requeridos.');
-        return;
-    }
-
-    try {
-        await api('/config', {
-            method: 'POST',
-            body: { url, api_key: apiKey, model }
-        });
-        showConfigStatus('success', '✅ Configuración guardada exitosamente.');
-        // Keep the API key value in the field (don't clear it)
-    } catch (error) {
-        showConfigStatus('error', `❌ Error al guardar: ${error.message}`);
-    }
-}
-
-async function testConnection() {
-    const url = document.getElementById('maasUrl').value.trim();
-    const apiKey = document.getElementById('maasApiKey').value.trim();
-    const model = document.getElementById('maasModel').value.trim();
-
-    if (!url || !apiKey || !model) {
-        showConfigStatus('error', 'Configure todos los campos antes de probar.');
-        return;
-    }
-
-    // Save first, then test
-    try {
-        await api('/config', {
-            method: 'POST',
-            body: { url, api_key: apiKey, model }
-        });
-
-        showConfigStatus('success', '⏳ Probando conexión...');
-
-        const result = await api('/config/test', { method: 'POST' });
-
-        if (result.success) {
-            showConfigStatus('success', `✅ ${result.message}`);
-        } else {
-            showConfigStatus('error', `❌ ${result.message}`);
-        }
-    } catch (error) {
-        showConfigStatus('error', `❌ Error: ${error.message}`);
-    }
-}
-
-function showConfigStatus(type, message) {
-    const status = document.getElementById('configStatus');
-    status.className = `config-status ${type}`;
-    status.textContent = message;
-    status.style.display = 'block';
-}
-
 // ─── Utility Functions ────────────────────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -247,13 +269,4 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', () => {
     // Focus on input
     document.getElementById('messageInput').focus();
-
-    // Load config status
-    api('/config').then(data => {
-        if (!data.is_configured) {
-            const btn = document.getElementById('btnConfig');
-            btn.style.background = 'var(--primary-light)';
-            btn.title = '⚠️ MaaS no configurado - Haga clic para configurar';
-        }
-    }).catch(() => {});
 });

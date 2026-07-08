@@ -1,15 +1,16 @@
 """FastAPI main application for the RAG Chatbot."""
 
+import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from pathlib import Path
 import importlib.util
 
-from app.config import load_config, save_config, AppConfig, MaaSConfig
+from app.config import load_config, AppConfig, MaaSConfig, mask_api_key
 from app.database import db_manager
 from app.llm_service import llm_service
 
@@ -125,12 +126,6 @@ class ChatResponse(BaseModel):
     sources: List[str] = []
 
 
-class MaaSConfigRequest(BaseModel):
-    url: str
-    api_key: str
-    model: str
-
-
 # ─── Routes ────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -141,44 +136,27 @@ async def serve_frontend():
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Handle chat messages using RAG."""
+    """Handle chat messages using RAG (non-streaming fallback)."""
     if not request.message.strip():
         raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
 
-    # Check if MaaS (LLM) is configured
     config = load_config()
     if not config.maas.url or not config.maas.api_key or not config.maas.model:
         return ChatResponse(
-            response="⚠️ El chatbot no está conectado a un LLM. Por favor configure MaaS (URL, API Key y Modelo) haciendo clic en el botón ⚙️.",
+            response="⚠️ El chatbot no está conectado a un LLM. Verifique la configuración en .env.",
             sources=[]
         )
 
-    # Check if ChromaDB is empty
-    if db_manager.is_empty():
-        # Still call LLM so it can respond, but note there's no data
-        response_text = llm_service.generate_response(
-            query=request.message,
-            context_documents=[]
-        )
-        return ChatResponse(
-            response=response_text,
-            sources=[]
-        )
-
-    # Query ChromaDB for relevant documents
-    results = db_manager.query(request.message, n_results=5)
-    context_documents = results.get("documents", [])
-
-    if not context_documents:
-        # No relevant results found — still call LLM with empty context
-        response_text = llm_service.generate_response(
-            query=request.message,
-            context_documents=[]
-        )
-        return ChatResponse(
-            response=response_text,
-            sources=[]
-        )
+    # Query ChromaDB for relevant documents (skip if empty)
+    context_documents = []
+    sources = []
+    if not db_manager.is_empty():
+        results = db_manager.query(request.message, n_results=5)
+        context_documents = results.get("documents", [])
+        metadatas = results.get("metadatas", [])
+        for meta in metadatas:
+            if meta and "source" in meta:
+                sources.append(meta["source"])
 
     # Generate response using LLM with RAG
     response_text = llm_service.generate_response(
@@ -186,47 +164,72 @@ async def chat(request: ChatRequest):
         context_documents=context_documents
     )
 
-    # Collect source metadata
-    sources = []
-    metadatas = results.get("metadatas", [])
-    for meta in metadatas:
-        if meta and "source" in meta:
-            sources.append(meta["source"])
+    return ChatResponse(response=response_text, sources=sources)
 
-    return ChatResponse(
-        response=response_text,
-        sources=sources
-    )
+
+@app.post("/api/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """Handle chat messages using RAG with Server-Sent Events (streaming).
+
+    Returns a stream of JSON events:
+      - {"type": "sources", "data": [...]}  — source metadata (once)
+      - {"type": "token", "data": "..."}    — a text chunk (many)
+      - {"type": "done"}                    — stream complete (once)
+      - {"type": "error", "data": "..."}    — error occurred
+    """
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
+
+    config = load_config()
+    if not config.maas.url or not config.maas.api_key or not config.maas.model:
+        async def _error():
+            yield f"data: {json.dumps({'type': 'error', 'data': 'MaaS no configurado'})}\n\n"
+        return StreamingResponse(_error(), media_type="text/event-stream")
+
+    # Query ChromaDB for relevant documents (skip if empty)
+    context_documents = []
+    sources = []
+    if not db_manager.is_empty():
+        results = db_manager.query(request.message, n_results=5)
+        context_documents = results.get("documents", [])
+        metadatas = results.get("metadatas", [])
+        for meta in metadatas:
+            if meta and "source" in meta:
+                sources.append(meta["source"])
+
+    def _generate():
+        """SSE generator that yields tokens as they arrive."""
+        # Send sources first
+        if sources:
+            yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n"
+        # Stream tokens from the LLM
+        try:
+            for token in llm_service.generate_response_stream(
+                query=request.message,
+                context_documents=context_documents
+            ):
+                yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'data': str(e)})}\n\n"
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
 
 
 @app.get("/api/config")
 async def get_config():
-    """Get current MaaS configuration."""
+    """Get current MaaS configuration status (read-only, API key is masked).
+
+    Configuration is now managed exclusively through environment variables
+    in the .env file. This endpoint only reports the current status.
+    """
     config = load_config()
     return {
         "url": config.maas.url,
-        "api_key": config.maas.api_key,
+        "api_key": mask_api_key(config.maas.api_key),
         "model": config.maas.model,
         "is_configured": bool(config.maas.url and config.maas.api_key and config.maas.model)
     }
-
-
-@app.post("/api/config")
-async def update_config(request: MaaSConfigRequest):
-    """Update MaaS configuration."""
-    config = load_config()
-    config.maas.url = request.url.strip()
-    config.maas.api_key = request.api_key.strip()
-    config.maas.model = request.model.strip()
-    save_config(config)
-    return {"message": "Configuración guardada exitosamente"}
-
-
-@app.post("/api/config/test")
-async def test_config():
-    """Test the MaaS connection."""
-    result = llm_service.test_connection()
-    return result
 
 
 @app.get("/api/stats")

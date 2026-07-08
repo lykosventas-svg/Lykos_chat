@@ -1,8 +1,8 @@
 /* ─── CSS Variables ──────────────────────────────────────────────── */
 :root {
-    --primary: #c4102e;
-    --primary-hover: #a30d25;
-    --primary-light: #fde8ec;
+    --primary: #1a2744;
+    --primary-hover: #0f1a2e;
+    --primary-light: #e8edf4;
     --secondary: #5f6368;
     --secondary-hover: #4a4e52;
     --danger: #dc3545;
@@ -11,7 +11,7 @@
     --warning: #ffc107;
     --bg: #f8f9fa;
     --bg-white: #ffffff;
-    --bg-dark: #1a1a2e;
+    --bg-dark: #1a2744;
     --text: #202124;
     --text-light: #5f6368;
     --text-white: #ffffff;
@@ -68,16 +68,19 @@ html, body {
     font-size: 32px;
 }
 
-.logo h1 {
+.logo-title {
     font-size: 20px;
     font-weight: 600;
-    color: var(--text);
     line-height: 1.2;
 }
 
-.subtitle {
-    font-size: 12px;
-    color: var(--text-light);
+.logo-title-dark {
+    color: #000000;
+}
+
+.logo-title-light {
+    color: #b0b0b0;
+    font-weight: 400;
 }
 
 .header-right {
@@ -323,120 +326,6 @@ html, body {
     border-radius: 50%;
     font-size: 20px;
     flex-shrink: 0;
-}
-
-/* ─── Modal ─────────────────────────────────────────────────────── */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease;
-}
-
-.modal {
-    background: var(--bg-white);
-    border-radius: var(--radius);
-    width: 90%;
-    max-width: 520px;
-    box-shadow: var(--shadow-lg);
-    animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.modal-header h2 {
-    font-size: 18px;
-}
-
-.modal-body {
-    padding: 24px;
-}
-
-.modal-description {
-    margin-bottom: 20px;
-    color: var(--text-light);
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 6px;
-    color: var(--text);
-}
-
-.form-group input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    transition: var(--transition);
-}
-
-.form-group input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
-}
-
-.form-group small {
-    display: block;
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-.config-status {
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    margin-top: 16px;
-}
-
-.config-status.success {
-    background: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #c8e6c9;
-}
-
-.config-status.error {
-    background: #ffebee;
-    color: #c62828;
-    border: 1px solid #ffcdd2;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--border-light);
 }
 
 /* ─── Loading Overlay ───────────────────────────────────────────── */

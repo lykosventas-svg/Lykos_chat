@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot - ChromaDB + Huawei Cloud MaaS</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🤖</span>
+                <div>
+                    <h1>RAG Chatbot</h1>
+                    <p class="subtitle">ChromaDB + Huawei Cloud MaaS</p>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-icon" id="btnConfig" title="Configurar MaaS" onclick="openConfigModal()">
+                ⚙️
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Chat Area -->
+        <div class="chat-container" id="chatContainer">
+            <div class="messages" id="messages">
+                <div class="message system-message">
+                    <div class="message-content">
+                        <p>Bienvenido</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Escriba su pregunta aquí..." 
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="btn btn-primary" id="btnSend" onclick="sendMessage()">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Config Modal -->
+    <div class="modal-overlay" id="configModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>⚙️ Configuración de MaaS</h2>
+                <button class="btn btn-icon" onclick="closeConfigModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">
+                    Configure los datos de acceso al servicio <strong>Huawei Cloud MaaS</strong> 
+                    (Model as a Service). La API es compatible con OpenAI.
+                </p>
+                
+                <div class="form-group">
+                    <label for="maasUrl">URL del Endpoint</label>
+                    <input 
+                        type="url" 
+                        id="maasUrl" 
+                        placeholder="https://maas-api.xxx.myhuaweicloud.com"
+                    >
+                    <small>URL base del servicio MaaS (sin /v1, se añade automáticamente)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="maasApiKey">API Key</label>
+                    <input 
+                        type="password" 
+                        id="maasApiKey" 
+                        placeholder="Ingrese su API Key de Huawei Cloud"
+                    >
+                    <small>Clave de autenticación del servicio MaaS</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="maasModel">Modelo de IA</label>
+                    <input 
+                        type="text" 
+                        id="maasModel" 
+                        placeholder="Ej: qwen2.5-72b-instruct"
+                    >
+                    <small>Nombre del modelo a utilizar en MaaS</small>
+                </div>
+
+                <div class="config-status" id="configStatus" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="testConnection()">Probar Conexión</button>
+                <button class="btn btn-primary" onclick="saveConfig()">Guardar</button>
+                <button class="btn btn-ghost" onclick="closeConfigModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p id="loadingText">Procesando...</p>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

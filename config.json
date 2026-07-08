@@ -1,0 +1,7 @@
+{
+  "maas": {
+    "url": "https://api-ap-southeast-1.modelarts-maas.com/openai/v1",
+    "api_key": "8a55EDEUHXaqhJllVNJ_Pm68ICfZu5L_T6t8_9EqOAIGzmAtl9K-qMgS7IoC4b5li6bfcX45BrZ_TjPve4tBYg",
+    "model": "glm-5.1"
+  }
+}

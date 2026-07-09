@@ -153,7 +153,7 @@ async def chat(request: ChatRequest):
     context_documents = []
     sources = []
     if not db_manager.is_empty():
-        results = db_manager.query(request.message, n_results=5)
+        results = db_manager.query(request.message, n_results=10)
         context_documents = results.get("documents", [])
         metadatas = results.get("metadatas", [])
         for meta in metadatas:
@@ -192,7 +192,7 @@ async def chat_stream(request: ChatRequest):
     context_documents = []
     sources = []
     if not db_manager.is_empty():
-        results = db_manager.query(request.message, n_results=5)
+        results = db_manager.query(request.message, n_results=10)
         context_documents = results.get("documents", [])
         metadatas = results.get("metadatas", [])
         for meta in metadatas:

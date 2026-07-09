@@ -2,6 +2,8 @@ datos = [
     "LYKOS SI CONSULTING es una consultoría especializada en ciberseguridad con enfoque estratégico orientado al segmento de Pequeñas y Medianas Empresas (PyMES). El catálogo de servicios de LYKOS tiene como objetivo proporcionar una referencia completa, precisa y actualizada de cada uno de los servicios que la empresa ofrece a sus clientes.",
     
     "LYKOS SI CONSULTING ofrece cinco servicios especializados: 1) Escaneo de Vulnerabilidades para identificar brechas de seguridad en infraestructura tecnológica; 2) Implementación ISO 27001 para acompañamiento hacia la certificación internacional en gestión de seguridad de la información; 3) Cumplimiento PCI DSS para certificación de seguridad en empresas que procesan pagos con tarjeta; 4) Seguridad como Servicio (SECaaS) para monitoreo y gestión de seguridad continua y externalizada; 5) Instalación de Sistemas de Videovigilancia para implementación de soluciones físicas de seguridad en las instalaciones del cliente.",
+
+    "CATÁLOGO DE SERVICIOS LYKOS (referencia rápida): Los cinco servicios que ofrece LYKOS SI CONSULTING son: 1. Escaneo de Vulnerabilidades — identificación y reporte de debilidades en infraestructura TI. 2. Implementación ISO 27001 — diseño e implementación de SGSI para certificación internacional. 3. Cumplimiento PCI DSS — consultoría para cumplimiento de estándar de seguridad en pagos con tarjeta. 4. Seguridad como Servicio (SECaaS) — monitoreo, detección y respuesta continua externalizada. 5. Instalación de Sistemas de Videovigilancia — despliegue de cámaras IP y analógicas para seguridad física.",
     
     "El Escaneo de Vulnerabilidades de LYKOS SI CONSULTING es un proceso sistemático, automatizado y analítico mediante el cual se identifican, clasifican y reportan debilidades de seguridad en la infraestructura TI de una organización. El alcance se define de manera conjunta con el cliente durante la fase inicial de planificación, garantizando que cada componente crítico de su infraestructura sea considerado.",
     
@@ -94,6 +96,14 @@ metadatos = [
         "tipo_contenido": "resumen_servicios",
         "servicio": "general",
         "palabras_clave": ["servicios", "escaneo vulnerabilidades", "ISO 27001", "PCI DSS", "SECaaS", "videovigilancia", "ciberseguridad"],
+        "fuente": "Catalogo de servicos Lykos",
+        "pagina": "3"
+    },
+    {
+        "seccion": "General",
+        "tipo_contenido": "catalogo_referencia",
+        "servicio": "general",
+        "palabras_clave": ["catálogo", "servicios", "escaneo de vulnerabilidades", "ISO 27001", "PCI DSS", "SECaaS", "videovigilancia", "referencia rápida", "cinco servicios"],
         "fuente": "Catalogo de servicos Lykos",
         "pagina": "3"
     },
@@ -406,6 +416,7 @@ metadatos = [
 ids = [
     "chunk_001",
     "chunk_002",
+    "chunk_002b",
     "chunk_003",
     "chunk_004",
     "chunk_005",

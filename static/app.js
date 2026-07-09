@@ -203,10 +203,35 @@ function addMessageToUI(role, content, sources = []) {
 
 function formatMessage(text) {
     // Simple formatting: bold, code, line breaks
-    return text
+    let formatted = text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\n/g, '<br>');
+
+    // Convert URLs to clickable links (except mailto: and wa.me which are handled separately)
+    formatted = formatted.replace(
+        /(?!<a\s)(?:^|[^"=])\b(https?:\/\/(?!wa\.me)[^\s<]+)/g,
+        (match, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+    );
+
+    // Convert email addresses to clickable mailto: links
+    formatted = formatted.replace(
+        /\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g,
+        (match, email) => `<a href="mailto:${email}" target="_blank" rel="noopener noreferrer">${email}</a>`
+    );
+
+    // Convert WhatsApp phone numbers to clickable wa.me links
+    // Matches patterns like +5215534624630, +52 15534624630, +52 1 55 3462 4630, etc.
+    formatted = formatted.replace(
+        /\+52\s*1?\s*[\d\s]{10,}/g,
+        (match) => {
+            // Remove all spaces and the + sign to get the raw number
+            const rawNumber = match.replace(/[\s+]/g, '');
+            return `<a href="https://wa.me/${rawNumber}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+        }
+    );
+
+    return formatted;
 }
 
 function showTypingIndicator() {
@@ -267,6 +292,10 @@ function escapeHtml(text) {
 
 // ─── Initialize ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    // Show initial greeting from Lykos
+    const greeting = "¡Hola! Soy parte del equipo de Lykos. ¿Buscas proteger tu empresa contra ciberataques o tienes alguna consulta técnica? Dime en qué te puedo ayudar.";
+    addMessageToUI('assistant', greeting);
+
     // Focus on input
     document.getElementById('messageInput').focus();
 });

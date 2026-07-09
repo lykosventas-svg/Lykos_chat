@@ -69,12 +69,14 @@ async def load_seed_data():
         print(f"[OK] Se cargaron {len(new_items)} documento(s) nuevo(s) desde seed_data.py (formato DOCUMENTS) a ChromaDB")
         return
 
-    # Format 2: Separate lists (documentos, metadatos, ids)
-    documentos = getattr(seed_module, "documentos", [])
+    # Format 2: Separate lists (datos/documentos, metadatos/metadatos, ids)
+    # Support both "datos" and "documentos" as variable names for the data list
+    documentos = getattr(seed_module, "datos", None) or getattr(seed_module, "documentos", [])
     if not documentos:
         return
 
-    metadatos = getattr(seed_module, "metadatos", None)
+    # Support both "metadatos" and "metadatas" as variable names for metadata
+    metadatos = getattr(seed_module, "metadatos", None) or getattr(seed_module, "metadatas", None)
     ids = getattr(seed_module, "ids", None)
 
     # Auto-generate IDs if not provided
@@ -134,7 +136,7 @@ async def serve_frontend():
     return FileResponse(STATIC_DIR / "index.html")
 
 
-@app.post("/api/chat", response_model=ChatResponse)
+@app.post("/api/chat/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Handle chat messages using RAG (non-streaming fallback)."""
     if not request.message.strip():

@@ -1,7 +1,7 @@
 {
   "maas": {
     "url": "https://api-ap-southeast-1.modelarts-maas.com/openai/v1",
-    "api_key": "",
-    "model": "deepseek-v3.2"
+    "api_key": "enc:gAAAAABqtCjHN0f-ylDGC8DHF0slGiIDwJc-cL49DLnXTiewU70IiZkJwv9dvh3MH97QFdBE-3FX7iHlzegVqtpJyGBEPffS4eVk-URg9xqwGsmVBDqvJJ0YowUhAKgRzgnqbB2wHJnX1EpvlZFuqL_Qt8zhfYAvthIBGRZ58fo23sDp3x6hAIBL_YFHC3wCo6_lL0YhkNh3",
+    "model": "glm-5.1"
   }
 }

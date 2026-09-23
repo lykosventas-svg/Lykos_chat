@@ -158,7 +158,7 @@ function createAssistantMessage() {
     const avatar = document.createElement('div');
     avatar.className = 'message-avatar';
     const avatarImg = document.createElement('img');
-    avatarImg.src = 'https://lykos.mx/wp-content/uploads/2026/07/ChatGPT-Image-9-jul-2026-04_51_54-a.m.png';
+    avatarImg.src = '/static/img/avatar.png';
     avatarImg.alt = 'Lykos';
     avatarImg.className = 'avatar-img';
     avatar.appendChild(avatarImg);
@@ -184,7 +184,7 @@ function addMessageToUI(role, content, sources = []) {
         avatar.textContent = '👤';
     } else {
         const avatarImg = document.createElement('img');
-        avatarImg.src = 'https://lykos.mx/wp-content/uploads/2026/07/ChatGPT-Image-9-jul-2026-04_51_54-a.m.png';
+        avatarImg.src = '/static/img/avatar.png';
         avatarImg.alt = 'Lykos';
         avatarImg.className = 'avatar-img';
         avatar.appendChild(avatarImg);
@@ -255,7 +255,7 @@ function showTypingIndicator() {
     const avatar = document.createElement('div');
     avatar.className = 'message-avatar';
     const avatarImg = document.createElement('img');
-    avatarImg.src = 'https://lykos.mx/wp-content/uploads/2026/07/ChatGPT-Image-9-jul-2026-04_51_54-a.m.png';
+    avatarImg.src = '/static/img/avatar.png';
     avatarImg.alt = 'Lykos';
     avatarImg.className = 'avatar-img';
     avatar.appendChild(avatarImg);

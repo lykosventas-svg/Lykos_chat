@@ -4,3 +4,4 @@ chromadb>=0.5.7
 openai>=1.51.0
 pydantic>=2.9.2
 python-dotenv>=1.0.0
+cryptography>=42.0.0
